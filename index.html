@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnderBuy CRM</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h1 { color: #2c3e50; margin-bottom: 5px; }
+        .subtitle { color: #7f8c8d; margin-top: 0; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        button { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        button:hover { background-color: #2980b9; }
+        button.secondary { background-color: #95a5a6; }
+        button.danger { background-color: #e74c3c; }
+        button.success { background-color: #27ae60; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th { background-color: #f8f9fa; padding: 12px 8px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #dee2e6; }
+        td { padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        tr:hover { background-color: #f8f9fa; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-created { background: #ffeaa7; color: #d68910; }
+        .status-transit { background: #81ecec; color: #00838f; }
+        .status-received { background: #a29bfe; color: #4a3f8b; }
+        .status-sent { background: #55efc4; color: #00695c; }
+        .status-completed { background: #b2bec3; color: #2d3436; }
+        .search-box { margin-bottom: 15px; }
+        .search-box input { width: 300px; display: inline-block; }
+        .total-bar { text-align: right; font-weight: bold; padding: 10px; background: #ecf0f1; border-radius: 5px; margin-bottom: 10px; }
+        .flex-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .result-box { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 15px 0; font-size: 18px; }
+        .result-box span { font-weight: bold; color: #2c3e50; }
+        .note { font-size: 12px; color: #7f8c8d; margin-top: 5px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🛒 UnderBuy CRM</h1>
+    <p class="subtitle">Калькулятор + Учет заказов</p>
+    
+    <div class="card">
+        <h2>🧮 Калькулятор стоимости</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>Цена товара (в юанях)</label>
+                    <input type="number" id="calc_price_cny" placeholder="100" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Вес (кг)</label>
+                    <input type="number" id="calc_weight" placeholder="1.3" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Курс юаня к BYN</label>
+                    <input type="number" id="calc_rate_cny" value="0.44" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Тип доставки</label>
+                    <select id="calc_delivery_type">
+                        <option value="auto">🚗 АВТО (машина) - 6$/кг</option>
+                        <option value="avia">✈️ АВИА (самолет) - 120¥/кг</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <div class="form-group" id="calc_dollar_rate_group">
+                    <label>Курс доллара к BYN (для авто)</label>
+                    <input type="number" id="calc_rate_usd" value="3.2" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Моя наценка (BYN)</label>
+                    <input type="number" id="calc_margin" placeholder="40" step="1">
+                </div>
+                <button onclick="calculatePrice()" style="width:100%; margin-top:20px; font-size:18px;">💰 Рассчитать</button>
+                <div class="result-box" id="result_box" style="display:none;">
+                    <p>Стоимость для клиента (BYN): <span id="result_byn"></span></p>
+                    <p>Примерно в RUB: <span id="result_rub"></span></p>
+                    <button class="success" onclick="copyResultToOrder()" style="font-size:14px;">📋 Использовать в заказе</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="order_form_card">
+        <h2>📝 Новый заказ</h2>
+        <div class="grid-2">
+            <div>
+                <div class="form-group">
+                    <label>Название товара</label>
+                    <input type="text" id="order_product_name" placeholder="Штаны Balenciaga, S">
+                </div>
+                <div class="form-group">
+                    <label>Юзернейм клиента в TG</label>
+                    <input type="text" id="order_client_username" placeholder="@emoemoemokid">
+                </div>
+                <div class="form-group">
+                    <label>Способ доставки</label>
+                    <select id="order_delivery_method">
+                        <option value="✈️ АВИА">✈️ АВИА (самолет)</option>
+                        <option value="🚗 АВТО">🚗 АВТО (машина)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Статус</label>
+                    <select id="order_status">
+                        <option value="Создан">🟡 Создан</option>
+                        <option value="В пути (Китай)">🔵 В пути (Китай)</option>
+                        <option value="Получен мной">🟣 Получен мной</option>
+                        <option value="Отправлен клиенту">🟢 Отправлен клиенту</option>
+                        <option value="Завершен">⚫ Завершен</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label>Предоплата (BYN)</label>
+                    <input type="number" id="order_prepayment" placeholder="40" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Полная стоимость для клиента (BYN)</label>
+                    <input type="number" id="order_full_price" placeholder="200" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Трек-номер</label>
+                    <input type="text" id="order_track_number" placeholder="YT7620355727614">
+                </div>
+                <div class="form-group">
+                    <label>Карта (на которую принята оплата)</label>
+                    <input type="text" id="order_card_used" placeholder="1 КАРТА">
+                </div>
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <textarea id="order_comment" rows="2" placeholder="Любые заметки..."></textarea>
+                </div>
+                <input type="hidden" id="order_edit_id">
+                <div class="flex-buttons">
+                    <button onclick="saveOrder()" class="success">✅ Сохранить заказ</button>
+                    <button onclick="clearOrderForm()" class="secondary">🔄 Очистить форму</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Все заказы</h2>
+        <div class="search-box">
+            <input type="text" id="search_input" placeholder="🔍 Поиск по всему (юз, трек, название, карта)..." oninput="loadOrders()">
+        </div>
+        <div id="orders_table_container">
+            <p>Загрузка...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Переключение видимости поля курса доллара
+document.getElementById('calc_delivery_type').addEventListener('change', function() {
+    const dollarGroup = document.getElementById('calc_dollar_rate_group');
+    if (this.value === 'avia') {
+        dollarGroup.style.display = 'none';
+    } else {
+        dollarGroup.style.display = 'block';
+    }
+});
+
+let calculatedByn = 0;
+
+function calculatePrice() {
+    const priceCny = parseFloat(document.getElementById('calc_price_cny').value) || 0;
+    const weight = parseFloat(document.getElementById('calc_weight').value) || 0;
+    const rateCny = parseFloat(document.getElementById('calc_rate_cny').value) || 0.44;
+    const deliveryType = document.getElementById('calc_delivery_type').value;
+    const rateUsd = parseFloat(document.getElementById('calc_rate_usd').value) || 3.2;
+    const margin = parseFloat(document.getElementById('calc_margin').value) || 0;
+    
+    let total;
+    if (deliveryType === 'auto') {
+        total = (priceCny * rateCny) + (6 * weight * rateUsd) + margin;
+    } else {
+        total = ((priceCny + 120 * weight) * rateCny) + margin;
+    }
+    
+    calculatedByn = total.toFixed(2);
+    const rub = (total * 30.5).toFixed(0); // Примерный курс BYN/RUB для ориентира, можно поменять
+    
+    document.getElementById('result_byn').innerText = calculatedByn + ' BYN';
+    document.getElementById('result_rub').innerText = '≈ ' + rub + ' RUB (курс ~30.5)';
+    document.getElementById('result_box').style.display = 'block';
+}
+
+function copyResultToOrder() {
+    document.getElementById('order_full_price').value = calculatedByn;
+    document.getElementById('order_delivery_method').value = 
+        document.getElementById('calc_delivery_type').value === 'auto' ? '🚗 АВТО' : '✈️ АВИА';
+    document.getElementById('order_form_card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function saveOrder() {
+    const id = document.getElementById('order_edit_id').value;
+    const orderData = {
+        product_name: document.getElementById('order_product_name').value,
+        client_username: document.getElementById('order_client_username').value,
+        prepayment: document.getElementById('order_prepayment').value || 0,
+        full_price_byn: document.getElementById('order_full_price').value || 0,
+        delivery_method: document.getElementById('order_delivery_method').value,
+        track_number: document.getElementById('order_track_number').value,
+        status: document.getElementById('order_status').value,
+        comment: document.getElementById('order_comment').value,
+        card_used: document.getElementById('order_card_used').value
+    };
+    
+    const url = id ? `/api/orders/${id}` : '/api/orders';
+    const method = id ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+    })
+    .then(r => r.json())
+    .then(() => {
+        clearOrderForm();
+        loadOrders();
+    });
+}
+
+function clearOrderForm() {
+    document.getElementById('order_edit_id').value = '';
+    document.getElementById('order_product_name').value = '';
+    document.getElementById('order_client_username').value = '';
+    document.getElementById('order_prepayment').value = '';
+    document.getElementById('order_full_price').value = '';
+    document.getElementById('order_delivery_method').value = '✈️ АВИА';
+    document.getElementById('order_track_number').value = '';
+    document.getElementById('order_status').value = 'Создан';
+    document.getElementById('order_comment').value = '';
+    document.getElementById('order_card_used').value = '';
+}
+
+function loadOrders() {
+    const search = document.getElementById('search_input')?.value || '';
+    fetch(`/api/orders?search=${encodeURIComponent(search)}`)
+    .then(r => r.json())
+    .then(orders => {
+        const container = document.getElementById('orders_table_container');
+        if (orders.length === 0) {
+            container.innerHTML = '<p>Нет заказов. Создайте первый!</p>';
+            return;
+        }
+        
+        let totalByn = 0;
+        let html = '<table><thead><tr><th>Товар</th><th>Клиент</th><th>Предоплата</th><th>Полная цена</th><th>Доставка</th><th>Трек</th><th>Статус</th><th>Карта</th><th>Коммент</th><th></th></tr></thead><tbody>';
+        
+        orders.forEach(o => {
+            totalByn += o.full_price_byn || 0;
+            const statusClass = getStatusClass(o.status);
+            html += `<tr>
+                <td><strong>${escapeHtml(o.product_name || '')}</strong></td>
+                <td>${escapeHtml(o.client_username || '')}</td>
+                <td>${o.prepayment ? o.prepayment + ' BYN' : '-'}</td>
+                <td>${o.full_price_byn ? o.full_price_byn + ' BYN' : '-'}</td>
+                <td>${escapeHtml(o.delivery_method || '')}</td>
+                <td>${escapeHtml(o.track_number || '')}</td>
+                <td><span class="badge ${statusClass}">${escapeHtml(o.status || '')}</span></td>
+                <td>${escapeHtml(o.card_used || '')}</td>
+                <td style="max-width:100px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(o.comment || '')}</td>
+                <td>
+                    <button onclick="editOrder(${o.id})" class="secondary" style="padding:5px 8px; font-size:12px;">✏️</button>
+                    <button onclick="deleteOrder(${o.id})" class="danger" style="padding:5px 8px; font-size:12px;">🗑️</button>
+                </td>
+            </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        html += `<div class="total-bar">💰 Общая сумма заказов: <strong>${totalByn.toFixed(2)} BYN</strong> | Всего: ${orders.length} шт.</div>`;
+        container.innerHTML = html;
+    });
+}
+
+function getStatusClass(status) {
+    if (!status) return '';
+    if (status.includes('Создан')) return 'status-created';
+    if (status.includes('В пути')) return 'status-transit';
+    if (status.includes('Получен')) return 'status-received';
+    if (status.includes('Отправлен')) return 'status-sent';
+    if (status.includes('Завершен')) return 'status-completed';
+    return '';
+}
+
+function editOrder(id) {
+    fetch('/api/orders')
+    .then(r => r.json())
+    .then(orders => {
+        const order = orders.find(o => o.id === id);
+        if (!order) return;
+        document.getElementById('order_edit_id').value = order.id;
+        document.getElementById('order_product_name').value = order.product_name || '';
+        document.getElementById('order_client_username').value = order.client_username || '';
+        document.getElementById('order_prepayment').value = order.prepayment || '';
+        document.getElementById('order_full_price').value = order.full_price_byn || '';
+        document.getElementById('order_delivery_method').value = order.delivery_method || '✈️ АВИА';
+        document.getElementById('order_track_number').value = order.track_number || '';
+        document.getElementById('order_status').value = order.status || 'Создан';
+        document.getElementById('order_comment').value = order.comment || '';
+        document.getElementById('order_card_used').value = order.card_used || '';
+        document.getElementById('order_form_card').scrollIntoView({ behavior: 'smooth' });
+    });
+}
+
+function deleteOrder(id) {
+    if (confirm('Точно удалить этот заказ? Это необратимо.')) {
+        fetch(`/api/orders/${id}`, { method: 'DELETE' })
+        .then(() => loadOrders());
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Загрузить заказы при старте
+loadOrders();
+</script>
+</body>
+</html>
