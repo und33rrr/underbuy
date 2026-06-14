@@ -486,14 +486,14 @@
             <div class="row row-2">
                 <div class="input-group">
                     <label>Доставка</label>
-                    <select id="m-delivery" onchange="toggleAviaRate()">
+                    <select id="m-delivery" onchange="toggleAviaRate();recalcOrder()">
                         <option value="auto">🚗 АВТО</option>
                         <option value="avia">✈️ АВИА</option>
                     </select>
                 </div>
                 <div class="input-group">
                     <label>Валюта</label>
-                    <select id="m-currency">
+                    <select id="m-currency" onchange="updateModalCurrencyLabel();recalcOrder()">
                         <option value="BYN">BYN</option>
                         <option value="RUB">RUB</option>
                     </select>
@@ -506,7 +506,7 @@
                     <button type="button" class="filter-chip" onclick="setAviaRate(110)" id="avia-110">110</button>
                     <button type="button" class="filter-chip" onclick="setAviaRate(100)" id="avia-100">100</button>
                 </div>
-                <input type="number" id="m-avia-rate" step="1" value="120" oninput="clearAviaChips()">
+                    <input type="number" id="m-avia-rate" step="1" value="120" oninput="clearAviaChips();recalcOrder()">
             </div>
             <div class="input-group">
                 <label>Статус</label>
@@ -534,16 +534,16 @@
             <div class="row row-2">
                 <div class="input-group">
                     <label>Цена в ¥</label>
-                    <input type="number" id="m-price-cny" step="0.01" placeholder="0">
+                    <input type="number" id="m-price-cny" step="0.01" placeholder="0" oninput="recalcOrder()">
                 </div>
                 <div class="input-group">
                     <label>Вес (кг)</label>
-                    <input type="number" id="m-weight-kg" step="0.01" placeholder="0">
+                    <input type="number" id="m-weight-kg" step="0.01" placeholder="0" oninput="recalcOrder()">
                 </div>
             </div>
             <div class="input-group">
                 <label>Наценка (BYN)</label>
-                <input type="number" id="m-margin-byn" step="0.01" placeholder="0">
+                <input type="number" id="m-margin-byn" step="0.01" placeholder="0" oninput="recalcOrder()">
             </div>
             <div style="display:flex;gap:8px;margin-top:4px">
                 <button class="btn btn-green" onclick="saveOrder()" id="m-save-btn" style="flex:1">Сохранить</button>
@@ -700,6 +700,30 @@ function updateModalCurrencyLabel(){
     document.getElementById('m-price-label').textContent='Цена клиента ('+c+')';
 }
 document.getElementById('m-currency').addEventListener('change',updateModalCurrencyLabel);
+function recalcOrder(){
+    const p=parseFloat(document.getElementById('m-price-cny').value)||0;
+    const w=parseFloat(document.getElementById('m-weight-kg').value)||0;
+    const m=parseFloat(document.getElementById('m-margin-byn').value)||0;
+    const d=document.getElementById('m-delivery').value;
+    const cur=document.getElementById('m-currency').value;
+    const rm=SETTINGS.rate_cny_my||0.43;
+    const rc=SETTINGS.rate_cny_client||0.44;
+    const usd=SETTINGS.rate_usd_byn||3.0;
+    const rubR=SETTINGS.rate_byn_rub||29.5;
+    let cost,price;
+    if(d==='auto'){
+        cost=(p*rm)+(6*w*usd);
+        price=(p*rc)+(6*w*usd)+m;
+    }else{
+        const ar=parseFloat(document.getElementById('m-avia-rate').value)||120;
+        cost=(p+(ar*w))*rm;
+        price=(p+(ar*w))*rc+m;
+    }
+    if(cur==='RUB'){price=price*rubR}
+    const profit=cur==='RUB'?(price/rubR)-cost:price-cost;
+    document.getElementById('m-cost').value=cost.toFixed(2);
+    document.getElementById('m-price').value=price.toFixed(2);
+}
 async function saveOrder(){
     const id=document.getElementById('m-id').value;
     const price=parseFloat(document.getElementById('m-price').value)||0;
