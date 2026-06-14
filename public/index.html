@@ -865,8 +865,7 @@ async function loadDashboard(){
         '</div>';
     document.getElementById('dash-stats').innerHTML=
         '<div class="stat-card"><div class="label">Заказов</div><div class="value">'+stats.total_orders+'</div></div>'+
-        '<div class="stat-card"><div class="label">Выручка</div><div class="value">'+fmt(stats.total_revenue,'BYN')+'</div></div>'+
-        '<div class="stat-card"><div class="label">Себестоимость</div><div class="value">'+fmt(stats.total_cost,'BYN')+'</div></div>';
+        '<div class="stat-card"><div class="label">Выручка</div><div class="value">'+fmt(stats.total_revenue,'BYN')+'</div></div>';
     const active=list.filter(o=>o.status!=='Завершен').slice(0,10);
     const c=document.getElementById('dash-orders');
     if(!active.length){c.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Нет активных заказов</p></div>';return}
