@@ -1,3 +1,6 @@
+DROP POLICY IF EXISTS "Allow all access" ON orders;
+DROP POLICY IF EXISTS "Allow all access" ON settings;
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value REAL NOT NULL DEFAULT 0
@@ -32,9 +35,7 @@ INSERT INTO settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow all access" ON orders FOR ALL USING (true) WITH CHECK (true);
-
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Allow all access" ON orders FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access" ON settings FOR ALL USING (true) WITH CHECK (true);

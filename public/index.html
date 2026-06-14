@@ -486,7 +486,7 @@
             <div class="row row-2">
                 <div class="input-group">
                     <label>Доставка</label>
-                    <select id="m-delivery">
+                    <select id="m-delivery" onchange="toggleAviaRate()">
                         <option value="auto">🚗 АВТО</option>
                         <option value="avia">✈️ АВИА</option>
                     </select>
@@ -498,6 +498,11 @@
                         <option value="RUB">RUB</option>
                     </select>
                 </div>
+            </div>
+            <div class="input-group" id="m-avia-rate-group" style="display:none">
+                <label>Ставка авия (¥/кг)</label>
+                <input type="number" id="m-avia-rate" step="1" value="120" placeholder="120">
+                <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">1-3 кг: 120 · 3-5 кг: 110 · 5+ кг: 100</div>
             </div>
             <div class="input-group">
                 <label>Статус</label>
@@ -637,6 +642,10 @@ function calc(){
     else{rr.style.display='flex';document.getElementById('r-rub-label').textContent='Для клиента в RUB';document.getElementById('r-rub').textContent=fmt(cByn*rubR,'₽')}
     document.getElementById('calc-results').style.display='block';
 }
+function toggleAviaRate(){
+    const isAvia=document.getElementById('m-delivery').value==='avia';
+    document.getElementById('m-avia-rate-group').style.display=isAvia?'block':'none';
+}
 function fmt(v,c){return v.toFixed(2)+' '+c}
 function useInOrder(){
     document.getElementById('m-price').value=lastCalcResult.clientByn.toFixed(2);
@@ -697,7 +706,8 @@ async function saveOrder(){
         comment:document.getElementById('m-comment').value,
         price_cny:parseFloat(document.getElementById('m-price-cny').value)||0,
         weight_kg:parseFloat(document.getElementById('m-weight-kg').value)||0,
-        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0
+        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0,
+        avia_rate_cny:parseFloat(document.getElementById('m-avia-rate').value)||120
     };
     if(id){
         await sb.from('orders').update(data).eq('id',id);
@@ -711,6 +721,8 @@ function clearModal(){
     document.getElementById('m-status').value='В пути';
     document.getElementById('m-delivery').value='auto';
     document.getElementById('m-currency').value='BYN';
+    document.getElementById('m-avia-rate').value='120';
+    document.getElementById('m-avia-rate-group').style.display='none';
     document.getElementById('m-price-label').textContent='Цена клиента (BYN)';
     setPrepayType('full');
     document.getElementById('m-save-btn').textContent='Создать заказ';
@@ -726,6 +738,8 @@ async function editOrder(id){
     document.getElementById('m-cost').value=o.real_cost_byn||'';
     document.getElementById('m-prepay').value=o.prepayment_amount||'';
     document.getElementById('m-delivery').value=o.delivery_type||'auto';
+    document.getElementById('m-avia-rate').value=o.avia_rate_cny||120;
+    toggleAviaRate();
     document.getElementById('m-currency').value=o.client_currency||'BYN';
     updateModalCurrencyLabel();
     document.getElementById('m-status').value=o.status||'В пути';
