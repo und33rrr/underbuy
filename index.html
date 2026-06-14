@@ -703,26 +703,19 @@ document.getElementById('m-currency').addEventListener('change',updateModalCurre
 function recalcOrder(){
     const p=parseFloat(document.getElementById('m-price-cny').value)||0;
     const w=parseFloat(document.getElementById('m-weight-kg').value)||0;
-    const m=parseFloat(document.getElementById('m-margin-byn').value)||0;
     const d=document.getElementById('m-delivery').value;
     const cur=document.getElementById('m-currency').value;
     const rm=SETTINGS.rate_cny_my||0.43;
-    const rc=SETTINGS.rate_cny_client||0.44;
     const usd=SETTINGS.rate_usd_byn||3.0;
     const rubR=SETTINGS.rate_byn_rub||29.5;
-    let cost,price;
+    let cost;
     if(d==='auto'){
         cost=(p*rm)+(6*w*usd);
-        price=(p*rc)+(6*w*usd)+m;
     }else{
         const ar=parseFloat(document.getElementById('m-avia-rate').value)||120;
         cost=(p+(ar*w))*rm;
-        price=(p+(ar*w))*rc+m;
     }
-    if(cur==='RUB'){price=price*rubR}
-    const profit=cur==='RUB'?(price/rubR)-cost:price-cost;
     document.getElementById('m-cost').value=cost.toFixed(2);
-    document.getElementById('m-price').value=price.toFixed(2);
 }
 async function saveOrder(){
     const id=document.getElementById('m-id').value;
