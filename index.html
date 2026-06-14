@@ -656,6 +656,7 @@ function setAviaRate(v){
     ['120','110','100'].forEach(n=>{
         document.getElementById('avia-'+n).classList.toggle('active',n==v);
     });
+    recalcOrder();
 }
 function clearAviaChips(){
     ['120','110','100'].forEach(n=>{
