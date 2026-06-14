@@ -375,8 +375,8 @@
                 <span class="result-label">Чистая прибыль</span>
                 <span class="result-value green" id="r-profit">0 BYN</span>
             </div>
-            <div class="result-row" id="r-rub-row" style="display:none">
-                <span class="result-label">Для клиента в RUB</span>
+            <div class="result-row" id="r-rub-row">
+                <span class="result-label" id="r-rub-label">Для клиента в RUB</span>
                 <span class="result-value secondary" id="r-rub">0 ₽</span>
             </div>
             <div style="margin-top:16px">
@@ -599,15 +599,15 @@ function calc(){
     }else{
         cByn=(p+(120*w))*rc+m;const t=getCargoTariff(w);rCost=(p+(t*w))*rm;
     }
-    if(calcCurrency==='RUB')cByn=cByn*rubR;
     const profit=cByn-rCost;
+    if(calcCurrency==='RUB')cByn=cByn*rubR;
     lastCalcResult={clientByn:cByn,realCostByn:rCost,profit,priceCny:p,weight:w,margin:m,calcDelivery,calcCurrency};
     document.getElementById('r-client').textContent=calcCurrency==='RUB'?fmt(cByn,'₽'):fmt(cByn,'BYN');
     document.getElementById('r-cost').textContent=fmt(rCost,'BYN');
     document.getElementById('r-profit').textContent=fmt(profit,'BYN');
     const rr=document.getElementById('r-rub-row');
-    if(calcCurrency==='RUB'){rr.style.display='none'}
-    else{rr.style.display='flex';document.getElementById('r-rub').textContent=fmt(cByn*rubR,'₽')}
+    if(calcCurrency==='RUB'){rr.style.display='flex';document.getElementById('r-rub-label').textContent='Цена в BYN';document.getElementById('r-rub').textContent=fmt(cByn/rubR,'BYN')}
+    else{rr.style.display='flex';document.getElementById('r-rub-label').textContent='Для клиента в RUB';document.getElementById('r-rub').textContent=fmt(cByn*rubR,'₽')}
     document.getElementById('calc-results').style.display='block';
 }
 function fmt(v,c){return v.toFixed(2)+' '+c}
@@ -623,6 +623,7 @@ function useInOrder(){
     document.getElementById('m-save-btn').textContent='Создать заказ';
     document.getElementById('modal-title').textContent='Новый заказ';
     document.getElementById('m-delete-container').style.display='none';
+    updateModalCurrencyLabel();
     openModal();
 }
 function openModal(){document.getElementById('order-modal').classList.add('open')}
