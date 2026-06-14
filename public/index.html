@@ -200,6 +200,7 @@
         .order-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
         .order-meta span{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px}
         .order-profit{font-size:12px;color:#16a34a;margin-top:6px;font-weight:700}
+        .order-remaining{font-size:12px;color:var(--text-tertiary);margin-top:2px}
 
         /* ── Badges ── */
         .badge{
@@ -478,8 +479,8 @@
                 <div class="prepayment-row">
                     <input type="number" id="m-prepay" step="0.01" placeholder="0">
                     <div class="prepayment-type">
-                        <button class="active" id="m-pt-full" onclick="setPrepayType('full')">BYN</button>
-                        <button id="m-pt-percent" onclick="setPrepayType('percent')">% суммы</button>
+                        <button class="active" id="m-pt-byn" onclick="setPrepayType('byn')">BYN</button>
+                        <button id="m-pt-rub" onclick="setPrepayType('rub')">RUB</button>
                     </div>
                 </div>
             </div>
@@ -697,8 +698,8 @@ function closeModal(){
     window.scrollTo(0,modalScrollY);
 }
 function setPrepayType(t){
-    document.getElementById('m-pt-full').classList.toggle('active',t==='full');
-    document.getElementById('m-pt-percent').classList.toggle('active',t==='percent');
+    document.getElementById('m-pt-byn').classList.toggle('active',t==='byn');
+    document.getElementById('m-pt-rub').classList.toggle('active',t==='rub');
 }
 function updateModalCurrencyLabel(){
     const c=document.getElementById('m-currency').value;
@@ -727,12 +728,25 @@ function recalcOrder(){
     el.textContent=fmt(profit,'BYN');
     el.style.color=profit>=0?'#16a34a':'var(--red)';
 }
+function calcRemaining(o){
+    if(!o.prepayment_amount)return null;
+    const rubR=SETTINGS.rate_byn_rub||29.5;
+    const price=o.full_price_byn||0;
+    const prepay=o.prepayment_amount||0;
+    const cur=o.client_currency||'BYN';
+    const pt=o.prepayment_type||'byn';
+    let prepayInOrder;
+    if(cur==='RUB'&&pt==='byn')prepayInOrder=prepay*rubR;
+    else if(cur==='BYN'&&pt==='rub')prepayInOrder=prepay/rubR;
+    else prepayInOrder=prepay;
+    return Math.max(0,price-prepayInOrder);
+}
 async function saveOrder(){
     const id=document.getElementById('m-id').value;
     const price=parseFloat(document.getElementById('m-price').value)||0;
     const cost=parseFloat(document.getElementById('m-cost').value)||0;
     const pVal=parseFloat(document.getElementById('m-prepay').value)||0;
-    const isP=document.getElementById('m-pt-percent').classList.contains('active');
+    const isP=document.getElementById('m-pt-rub').classList.contains('active');
     const cur=document.getElementById('m-currency').value;
     const rubR=SETTINGS.rate_byn_rub||29.5;
     const profitByn=cur==='RUB'?(price/rubR)-cost:price-cost;
@@ -740,7 +754,7 @@ async function saveOrder(){
         product_name:document.getElementById('m-product').value,
         client_username:document.getElementById('m-username').value,
         full_price_byn:price,real_cost_byn:cost,profit_byn:profitByn,
-        prepayment_amount:pVal,prepayment_type:isP?'percent':'full',
+        prepayment_amount:pVal,prepayment_type:isP?'rub':'byn',
         delivery_type:document.getElementById('m-delivery').value,
         client_currency:cur,
         status:document.getElementById('m-status').value,
@@ -774,7 +788,7 @@ function clearModal(){
     document.getElementById('m-avia-rate-group').style.display='none';
     setAviaRate(120);
     document.getElementById('m-price-label').textContent='Цена клиента (BYN)';
-    setPrepayType('full');
+    setPrepayType('byn');
     document.getElementById('m-save-btn').textContent='Создать заказ';
     document.getElementById('modal-title').textContent='Новый заказ';
     document.getElementById('m-delete-container').style.display='none';
@@ -800,7 +814,7 @@ async function editOrder(id){
     document.getElementById('m-price-cny').value=o.price_cny||'';
     document.getElementById('m-weight-kg').value=o.weight_kg||'';
     document.getElementById('m-margin-byn').value=o.margin_byn||'';
-    setPrepayType(o.prepayment_type||'full');
+    setPrepayType(o.prepayment_type||'byn');
     document.getElementById('m-save-btn').textContent='Обновить';
     document.getElementById('modal-title').textContent='Редактировать заказ';
     document.getElementById('m-delete-container').style.display='block';
@@ -841,8 +855,7 @@ async function loadDashboard(){
     const total_revenue=list.reduce((s,o)=>s+toByn(o),0);
     const total_cost=list.reduce((s,o)=>s+(o.real_cost_byn||0),0);
     const total_profit=list.reduce((s,o)=>s+(o.profit_byn||0),0);
-    const total_prepaid=list.reduce((s,o)=>s+(o.prepayment_amount||0),0);
-    const stats={total_orders,total_revenue,total_cost,total_profit,total_prepaid};
+    const stats={total_orders,total_revenue,total_cost,total_profit};
     const cls=stats.total_profit>=0?'positive':'negative';
     document.getElementById('dash-hero').innerHTML=
         '<div class="hero-stat">'+
@@ -853,18 +866,19 @@ async function loadDashboard(){
     document.getElementById('dash-stats').innerHTML=
         '<div class="stat-card"><div class="label">Заказов</div><div class="value">'+stats.total_orders+'</div></div>'+
         '<div class="stat-card"><div class="label">Выручка</div><div class="value">'+fmt(stats.total_revenue,'BYN')+'</div></div>'+
-        '<div class="stat-card"><div class="label">Себестоимость</div><div class="value">'+fmt(stats.total_cost,'BYN')+'</div></div>'+
-        '<div class="stat-card"><div class="label">Предоплаты</div><div class="value">'+fmt(stats.total_prepaid,'BYN')+'</div></div>';
+        '<div class="stat-card"><div class="label">Себестоимость</div><div class="value">'+fmt(stats.total_cost,'BYN')+'</div></div>';
     const active=list.filter(o=>o.status!=='Завершен').slice(0,10);
     const c=document.getElementById('dash-orders');
     if(!active.length){c.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Нет активных заказов</p></div>';return}
     c.innerHTML=active.map(o=>{
         const pc=o.client_currency==='RUB'?'₽':'BYN';
+        const rem=calcRemaining(o);
         return '<div class="order-card" onclick="editOrder('+o.id+')">'+
         '<div class="order-header">'+
         '<span class="order-product">'+esc(o.product_name||'Без названия')+'</span>'+
         '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' '+pc:'—')+'</span>'+
         '</div>'+
+        (rem!==null?'<div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Осталось доплатить: '+fmt(rem,pc)+'</div>':'')+
         '<div class="order-meta">'+
         '<span>'+esc(o.client_username||'—')+'</span>'+
         getDeliveryBadge(o.delivery_type)+
@@ -892,11 +906,13 @@ async function loadOrders(){
     if(!f.length){c.innerHTML='<div class="empty-state"><span class="icon">🔍</span><p>Заказов не найдено</p></div>';return}
     c.innerHTML=f.map(o=>{
         const pc=o.client_currency==='RUB'?'₽':'BYN';
+        const rem=calcRemaining(o);
         return '<div class="order-card" onclick="editOrder('+o.id+')">'+
         '<div class="order-header">'+
         '<span class="order-product">'+esc(o.product_name||'Без названия')+'</span>'+
         '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' '+pc:'—')+'</span>'+
         '</div>'+
+        (rem!==null?'<div style="font-size:12px;color:var(--text-tertiary);margin-top:2px">Осталось доплатить: '+fmt(rem,pc)+'</div>':'')+
         '<div class="order-meta">'+
         '<span>'+esc(o.client_username||'—')+'</span>'+
         getDeliveryBadge(o.delivery_type)+
