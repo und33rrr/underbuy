@@ -356,12 +356,8 @@
                 </div>
                 <div class="delivery-option" id="del-avia" onclick="setDelivery('avia')">
                     <div class="icon">✈️</div>
-                    <span class="label">АВИА · <span id="del-avia-rate-label">120</span> ¥/кг</span>
+                    <span class="label">АВИА · 120 ¥/кг</span>
                 </div>
-            </div>
-            <div class="input-group" id="c-avia-rate-group" style="display:none">
-                <label>Ставка авия (¥/кг)</label>
-                <input type="number" id="c-avia-rate" step="1" value="120" oninput="calcAviaRate()">
             </div>
             <div class="currency-toggle">
                 <div class="currency-btn active" id="cur-byn" onclick="setCurrency('BYN')">BYN</div>
@@ -503,11 +499,6 @@
                     </select>
                 </div>
             </div>
-            <div class="input-group" id="m-avia-rate-group" style="display:none">
-                <label>Ставка авия (¥/кг)</label>
-                <input type="number" id="m-avia-rate" step="1" value="120" placeholder="120">
-                <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px">1-3 кг: 120 · 3-5 кг: 110 · 5+ кг: 100</div>
-            </div>
             <div class="input-group">
                 <label>Статус</label>
                 <select id="m-status">
@@ -592,15 +583,12 @@ async function loadSettings(){
     document.getElementById('s-rate-cny-my').value=SETTINGS.rate_cny_my||0.43;
     document.getElementById('s-rate-usd').value=SETTINGS.rate_usd_byn||3.0;
     document.getElementById('s-rate-rub').value=SETTINGS.rate_byn_rub||29.5;
-    document.getElementById('c-avia-rate').value=SETTINGS.avia_rate_cny||120;
-    document.getElementById('del-avia-rate-label').textContent=SETTINGS.avia_rate_cny||120;
 }
 async function saveSettings(){
     SETTINGS.rate_cny_client=parseFloat(document.getElementById('s-rate-cny-client').value)||0;
     SETTINGS.rate_cny_my=parseFloat(document.getElementById('s-rate-cny-my').value)||0;
     SETTINGS.rate_usd_byn=parseFloat(document.getElementById('s-rate-usd').value)||0;
     SETTINGS.rate_byn_rub=parseFloat(document.getElementById('s-rate-rub').value)||0;
-    SETTINGS.avia_rate_cny=parseFloat(document.getElementById('c-avia-rate').value)||120;
     const rows=Object.entries(SETTINGS).map(([key,value])=>({key,value}));
     await sb.from('settings').upsert(rows,{onConflict:'key'});
     calc();
@@ -617,7 +605,6 @@ function setDelivery(type){
     calcDelivery=type;
     document.getElementById('del-auto').classList.toggle('active',type==='auto');
     document.getElementById('del-avia').classList.toggle('active',type==='avia');
-    document.getElementById('c-avia-rate-group').style.display=type==='avia'?'block':'none';
     calc();
 }
 function setCurrency(c){
@@ -633,13 +620,12 @@ function calc(){
     const m=parseFloat(document.getElementById('c-margin').value)||0;
     const rc=SETTINGS.rate_cny_client||0.44,rm=SETTINGS.rate_cny_my||0.43;
     const usd=SETTINGS.rate_usd_byn||3.0,rubR=SETTINGS.rate_byn_rub||29.5;
-    const aviaRate=parseFloat(document.getElementById('c-avia-rate').value)||120;
-    document.getElementById('del-avia-rate-label').textContent=aviaRate;
     let cByn,rCost;
     if(calcDelivery==='auto'){
         cByn=(p*rc)+(6*w*usd)+m;rCost=(p*rm)+(6*w*usd);
     }else{
-        cByn=(p+(aviaRate*w))*rc+m;rCost=(p+(aviaRate*w))*rm;
+        const t=getCargoTariff(w);
+        cByn=(p+(t*w))*rc+m;rCost=(p+(t*w))*rm;
     }
     const profit=cByn-rCost;
     if(calcCurrency==='RUB')cByn=cByn*rubR;
@@ -656,10 +642,6 @@ function toggleAviaRate(){
     const isAvia=document.getElementById('m-delivery').value==='avia';
     document.getElementById('m-avia-rate-group').style.display=isAvia?'block':'none';
 }
-function calcAviaRate(){
-    document.getElementById('del-avia-rate-label').textContent=document.getElementById('c-avia-rate').value||120;
-    calc();
-}
 function fmt(v,c){return v.toFixed(2)+' '+c}
 function useInOrder(){
     document.getElementById('m-price').value=lastCalcResult.clientByn.toFixed(2);
@@ -669,7 +651,6 @@ function useInOrder(){
     document.getElementById('m-price-cny').value=lastCalcResult.priceCny;
     document.getElementById('m-weight-kg').value=lastCalcResult.weight;
     document.getElementById('m-margin-byn').value=lastCalcResult.margin;
-    document.getElementById('m-avia-rate').value=parseFloat(document.getElementById('c-avia-rate').value)||120;
     document.getElementById('m-id').value='';
     document.getElementById('m-save-btn').textContent='Создать заказ';
     document.getElementById('modal-title').textContent='Новый заказ';
@@ -721,8 +702,7 @@ async function saveOrder(){
         comment:document.getElementById('m-comment').value,
         price_cny:parseFloat(document.getElementById('m-price-cny').value)||0,
         weight_kg:parseFloat(document.getElementById('m-weight-kg').value)||0,
-        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0,
-        avia_rate_cny:parseFloat(document.getElementById('m-avia-rate').value)||120
+        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0
     };
     if(id){
         await sb.from('orders').update(data).eq('id',id);
@@ -736,7 +716,6 @@ function clearModal(){
     document.getElementById('m-status').value='В пути';
     document.getElementById('m-delivery').value='auto';
     document.getElementById('m-currency').value='BYN';
-    document.getElementById('m-avia-rate').value='120';
     document.getElementById('m-avia-rate-group').style.display='none';
     document.getElementById('m-price-label').textContent='Цена клиента (BYN)';
     setPrepayType('full');
@@ -753,8 +732,6 @@ async function editOrder(id){
     document.getElementById('m-cost').value=o.real_cost_byn||'';
     document.getElementById('m-prepay').value=o.prepayment_amount||'';
     document.getElementById('m-delivery').value=o.delivery_type||'auto';
-    document.getElementById('m-avia-rate').value=o.avia_rate_cny||120;
-    toggleAviaRate();
     document.getElementById('m-currency').value=o.client_currency||'BYN';
     updateModalCurrencyLabel();
     document.getElementById('m-status').value=o.status||'В пути';
