@@ -545,6 +545,10 @@
                 <label>Наценка (BYN)</label>
                 <input type="number" id="m-margin-byn" step="0.01" placeholder="0" oninput="recalcOrder()">
             </div>
+            <div style="padding:10px 0;border-top:1px solid var(--border-light);margin-top:4px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:14px;color:var(--text-secondary)">Чистая прибыль:</span>
+                <span id="m-profit-display" style="font-size:18px;font-weight:800;color:#16a34a">0.00 BYN</span>
+            </div>
             <div style="display:flex;gap:8px;margin-top:4px">
                 <button class="btn btn-green" onclick="saveOrder()" id="m-save-btn" style="flex:1">Сохранить</button>
                 <button class="btn btn-ghost" onclick="closeModal()" style="flex:0 0 auto;padding:12px 20px">Отмена</button>
@@ -706,6 +710,7 @@ function recalcOrder(){
     const w=parseFloat(document.getElementById('m-weight-kg').value)||0;
     const d=document.getElementById('m-delivery').value;
     const cur=document.getElementById('m-currency').value;
+    const price=parseFloat(document.getElementById('m-price').value)||0;
     const rm=SETTINGS.rate_cny_my||0.43;
     const usd=SETTINGS.rate_usd_byn||3.0;
     const rubR=SETTINGS.rate_byn_rub||29.5;
@@ -717,6 +722,10 @@ function recalcOrder(){
         cost=(p+(ar*w))*rm;
     }
     document.getElementById('m-cost').value=cost.toFixed(2);
+    const profit=cur==='RUB'?(price/rubR)-cost:price-cost;
+    const el=document.getElementById('m-profit-display');
+    el.textContent=fmt(profit,'BYN');
+    el.style.color=profit>=0?'#16a34a':'var(--red)';
 }
 async function saveOrder(){
     const id=document.getElementById('m-id').value;
@@ -796,6 +805,7 @@ async function editOrder(id){
     document.getElementById('modal-title').textContent='Редактировать заказ';
     document.getElementById('m-delete-container').style.display='block';
     openModal();
+    recalcOrder();
 }
 async function deleteOrder(){
     const id=document.getElementById('m-id').value;
