@@ -542,9 +542,15 @@
                     <input type="number" id="m-weight-kg" step="0.01" placeholder="0" oninput="recalcOrder()">
                 </div>
             </div>
-            <div class="input-group">
-                <label>Курс ¥ → BYN</label>
-                <input type="number" id="m-rate-cny" step="0.01" placeholder="0.44" oninput="recalcOrder()">
+            <div class="row row-2">
+                <div class="input-group">
+                    <label>Курс клиента ¥</label>
+                    <input type="number" id="m-rate-cny" step="0.01" placeholder="0.44" oninput="recalcOrder()">
+                </div>
+                <div class="input-group">
+                    <label>Мой курс ¥</label>
+                    <input type="number" id="m-rate-cny-my" step="0.01" placeholder="0.43" oninput="recalcOrder()">
+                </div>
             </div>
             <div class="input-group">
                 <label>Наценка (BYN)</label>
@@ -682,6 +688,7 @@ function useInOrder(){
     document.getElementById('m-weight-kg').value=lastCalcResult.weight;
     document.getElementById('m-margin-byn').value=lastCalcResult.margin;
     document.getElementById('m-rate-cny').value=SETTINGS.rate_cny_client||0.44;
+    document.getElementById('m-rate-cny-my').value=SETTINGS.rate_cny_my||0.43;
     document.getElementById('m-id').value='';
     document.getElementById('m-save-btn').textContent='Создать заказ';
     document.getElementById('modal-title').textContent='Новый заказ';
@@ -717,7 +724,7 @@ function recalcOrder(){
     const d=document.getElementById('m-delivery').value;
     const cur=document.getElementById('m-currency').value;
     const price=parseFloat(document.getElementById('m-price').value)||0;
-    const rm=parseFloat(document.getElementById('m-rate-cny').value)||SETTINGS.rate_cny_my||0.43;
+    const rm=parseFloat(document.getElementById('m-rate-cny-my').value)||SETTINGS.rate_cny_my||0.43;
     const usd=SETTINGS.rate_usd_byn||3.0;
     const rubR=SETTINGS.rate_byn_rub||29.5;
     let cost;
@@ -770,6 +777,7 @@ async function saveOrder(){
         weight_kg:parseFloat(document.getElementById('m-weight-kg').value)||0,
         margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0,
         rate_cny_client:parseFloat(document.getElementById('m-rate-cny').value)||SETTINGS.rate_cny_client||0.44,
+        rate_cny_my:parseFloat(document.getElementById('m-rate-cny-my').value)||SETTINGS.rate_cny_my||0.43,
         avia_rate_cny:parseFloat(document.getElementById('m-avia-rate').value)||120
     };
     try{
@@ -781,7 +789,7 @@ async function saveOrder(){
     }
 }
 function clearModal(){
-    ['m-id','m-product','m-username','m-price','m-cost','m-prepay','m-track','m-card','m-comment','m-price-cny','m-weight-kg','m-margin-byn','m-rate-cny'].forEach(i=>{document.getElementById(i).value=''});
+    ['m-id','m-product','m-username','m-price','m-cost','m-prepay','m-track','m-card','m-comment','m-price-cny','m-weight-kg','m-margin-byn','m-rate-cny','m-rate-cny-my'].forEach(i=>{document.getElementById(i).value=''});
     document.getElementById('m-status').value='В пути';
     document.getElementById('m-delivery').value='auto';
     document.getElementById('m-currency').value='BYN';
@@ -816,6 +824,7 @@ async function editOrder(id){
     document.getElementById('m-weight-kg').value=o.weight_kg||'';
     document.getElementById('m-margin-byn').value=o.margin_byn||'';
     document.getElementById('m-rate-cny').value=o.rate_cny_client||SETTINGS.rate_cny_client||0.44;
+    document.getElementById('m-rate-cny-my').value=o.rate_cny_my||SETTINGS.rate_cny_my||0.43;
     setPrepayType(o.prepayment_type||'byn');
     document.getElementById('m-save-btn').textContent='Обновить';
     document.getElementById('modal-title').textContent='Редактировать заказ';
