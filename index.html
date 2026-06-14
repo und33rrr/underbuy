@@ -449,7 +449,7 @@
             </div>
             <div class="row row-2">
                 <div class="input-group">
-                    <label>Цена клиента (BYN)</label>
+                    <label id="m-price-label">Цена клиента (BYN)</label>
                     <input type="number" id="m-price" step="0.01" placeholder="0">
                 </div>
                 <div class="input-group">
@@ -631,19 +631,27 @@ function setPrepayType(t){
     document.getElementById('m-pt-full').classList.toggle('active',t==='full');
     document.getElementById('m-pt-percent').classList.toggle('active',t==='percent');
 }
+function updateModalCurrencyLabel(){
+    const c=document.getElementById('m-currency').value;
+    document.getElementById('m-price-label').textContent='Цена клиента ('+c+')';
+}
+document.getElementById('m-currency').addEventListener('change',updateModalCurrencyLabel);
 async function saveOrder(){
     const id=document.getElementById('m-id').value;
     const price=parseFloat(document.getElementById('m-price').value)||0;
     const cost=parseFloat(document.getElementById('m-cost').value)||0;
     const pVal=parseFloat(document.getElementById('m-prepay').value)||0;
     const isP=document.getElementById('m-pt-percent').classList.contains('active');
+    const cur=document.getElementById('m-currency').value;
+    const rubR=SETTINGS.rate_byn_rub||29.5;
+    const profitByn=cur==='RUB'?(price/rubR)-cost:price-cost;
     const data={
         product_name:document.getElementById('m-product').value,
         client_username:document.getElementById('m-username').value,
-        full_price_byn:price,real_cost_byn:cost,profit_byn:price-cost,
+        full_price_byn:price,real_cost_byn:cost,profit_byn:profitByn,
         prepayment_amount:pVal,prepayment_type:isP?'percent':'full',
         delivery_type:document.getElementById('m-delivery').value,
-        client_currency:document.getElementById('m-currency').value,
+        client_currency:cur,
         status:document.getElementById('m-status').value,
         card_used:document.getElementById('m-card').value,
         track_number:document.getElementById('m-track').value,
@@ -664,6 +672,7 @@ function clearModal(){
     document.getElementById('m-status').value='В пути';
     document.getElementById('m-delivery').value='auto';
     document.getElementById('m-currency').value='BYN';
+    document.getElementById('m-price-label').textContent='Цена клиента (BYN)';
     setPrepayType('full');
     document.getElementById('m-save-btn').textContent='Создать заказ';
     document.getElementById('modal-title').textContent='Новый заказ';
@@ -679,6 +688,7 @@ async function editOrder(id){
     document.getElementById('m-prepay').value=o.prepayment_amount||'';
     document.getElementById('m-delivery').value=o.delivery_type||'auto';
     document.getElementById('m-currency').value=o.client_currency||'BYN';
+    updateModalCurrencyLabel();
     document.getElementById('m-status').value=o.status||'В пути';
     document.getElementById('m-card').value=o.card_used||'';
     document.getElementById('m-track').value=o.track_number||'';
@@ -720,8 +730,10 @@ async function loadDashboard(){
     q=periodFilter(q);
     const{data:orders}=await q;
     const list=orders||[];
+    const rubR=SETTINGS.rate_byn_rub||29.5;
+    const toByn=(o)=>o.client_currency==='RUB'?(o.full_price_byn||0)/rubR:(o.full_price_byn||0);
     const total_orders=list.length;
-    const total_revenue=list.reduce((s,o)=>s+(o.full_price_byn||0),0);
+    const total_revenue=list.reduce((s,o)=>s+toByn(o),0);
     const total_cost=list.reduce((s,o)=>s+(o.real_cost_byn||0),0);
     const total_profit=list.reduce((s,o)=>s+(o.profit_byn||0),0);
     const total_prepaid=list.reduce((s,o)=>s+(o.prepayment_amount||0),0);
@@ -741,11 +753,12 @@ async function loadDashboard(){
     const active=list.filter(o=>o.status!=='Завершен').slice(0,10);
     const c=document.getElementById('dash-orders');
     if(!active.length){c.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Нет активных заказов</p></div>';return}
-    c.innerHTML=active.map(o=>
-        '<div class="order-card" onclick="editOrder('+o.id+')">'+
+    c.innerHTML=active.map(o=>{
+        const pc=o.client_currency==='RUB'?'₽':'BYN';
+        return '<div class="order-card" onclick="editOrder('+o.id+')">'+
         '<div class="order-header">'+
         '<span class="order-product">'+esc(o.product_name||'Без названия')+'</span>'+
-        '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' BYN':'—')+'</span>'+
+        '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' '+pc:'—')+'</span>'+
         '</div>'+
         '<div class="order-meta">'+
         '<span>'+esc(o.client_username||'—')+'</span>'+
@@ -754,7 +767,7 @@ async function loadDashboard(){
         '</div>'+
         '<div class="order-profit">Прибыль: '+(o.profit_byn?o.profit_byn.toFixed(2):'0.00')+' BYN</div>'+
         '</div>'
-    ).join('');
+    }).join('');
 }
 async function loadOrders(){
     const s=document.getElementById('search')?.value||'';
@@ -772,11 +785,12 @@ async function loadOrders(){
     ).join('');
     const c=document.getElementById('orders-list');
     if(!f.length){c.innerHTML='<div class="empty-state"><span class="icon">🔍</span><p>Заказов не найдено</p></div>';return}
-    c.innerHTML=f.map(o=>
-        '<div class="order-card" onclick="editOrder('+o.id+')">'+
+    c.innerHTML=f.map(o=>{
+        const pc=o.client_currency==='RUB'?'₽':'BYN';
+        return '<div class="order-card" onclick="editOrder('+o.id+')">'+
         '<div class="order-header">'+
         '<span class="order-product">'+esc(o.product_name||'Без названия')+'</span>'+
-        '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' BYN':'—')+'</span>'+
+        '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' '+pc:'—')+'</span>'+
         '</div>'+
         '<div class="order-meta">'+
         '<span>'+esc(o.client_username||'—')+'</span>'+
@@ -786,7 +800,7 @@ async function loadOrders(){
         '</div>'+
         '<div class="order-profit">Прибыль: '+(o.profit_byn?o.profit_byn.toFixed(2):'0.00')+' BYN</div>'+
         '</div>'
-    ).join('');
+    }).join('');
 }
 function filterStatus(s){currentStatusFilter=s;loadOrders()}
 function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
