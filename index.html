@@ -722,15 +722,21 @@ async function saveOrder(){
         comment:document.getElementById('m-comment').value,
         price_cny:parseFloat(document.getElementById('m-price-cny').value)||0,
         weight_kg:parseFloat(document.getElementById('m-weight-kg').value)||0,
-        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0,
-        avia_rate_cny:parseFloat(document.getElementById('m-avia-rate').value)||120
+        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0
     };
-    if(id){
-        await sb.from('orders').update(data).eq('id',id);
-    }else{
-        await sb.from('orders').insert(data);
+    try{
+        if(id){
+            data.avia_rate_cny=parseFloat(document.getElementById('m-avia-rate').value)||120;
+            const{error}=await sb.from('orders').update(data).eq('id',id);
+            if(error)throw error;
+        }else{
+            const{error}=await sb.from('orders').insert(data);
+            if(error)throw error;
+        }
+        closeModal();clearModal();loadOrders();loadDashboard();
+    }catch(e){
+        alert('Ошибка сохранения: '+e.message);
     }
-    closeModal();clearModal();loadOrders();loadDashboard();
 }
 function clearModal(){
     ['m-id','m-product','m-username','m-price','m-cost','m-prepay','m-track','m-card','m-comment','m-price-cny','m-weight-kg','m-margin-byn'].forEach(i=>{document.getElementById(i).value=''});
