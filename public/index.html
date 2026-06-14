@@ -264,7 +264,7 @@
         }
         .modal-overlay.open{display:block}
         .modal{
-            position:fixed;bottom:0;left:0;right:0;
+            position:fixed;bottom:0;left:50%;transform:translateX(-50%);
             background:var(--surface);
             border-radius:var(--radius) var(--radius) 0 0;
             padding:24px 20px 32px;width:100%;max-width:560px;
@@ -277,7 +277,7 @@
             z-index:201;
         }
         body.modal-open{overflow:hidden!important;position:fixed!important;top:0;left:0;right:0;bottom:0}
-        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        @keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(40px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
         .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
         .modal-header h3{font-size:18px;font-weight:700;color:var(--text)}
         .modal-close{
