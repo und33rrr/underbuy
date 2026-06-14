@@ -271,7 +271,10 @@
             animation:slideUp .25s ease-out;
             border:1px solid var(--border);border-bottom:none;
         }
-        body.modal-open{overflow:hidden;position:fixed;width:100%}
+        body.modal-open{
+            overflow:hidden!important;position:fixed;width:100%;height:100%;
+            touch-action:none;
+        }
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
         .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
         .modal-header h3{font-size:18px;font-weight:700;color:var(--text)}
@@ -648,8 +651,19 @@ function useInOrder(){
     updateModalCurrencyLabel();
     openModal();
 }
-function openModal(){document.getElementById('order-modal').classList.add('open');document.body.classList.add('modal-open')}
-function closeModal(){document.getElementById('order-modal').classList.remove('open');document.body.classList.remove('modal-open')}
+let modalScrollY=0;
+function openModal(){
+    modalScrollY=window.scrollY;
+    document.getElementById('order-modal').classList.add('open');
+    document.body.classList.add('modal-open');
+    document.body.style.top='-'+modalScrollY+'px';
+}
+function closeModal(){
+    document.getElementById('order-modal').classList.remove('open');
+    document.body.classList.remove('modal-open');
+    document.body.style.top='';
+    window.scrollTo(0,modalScrollY);
+}
 function setPrepayType(t){
     document.getElementById('m-pt-full').classList.toggle('active',t==='full');
     document.getElementById('m-pt-percent').classList.toggle('active',t==='percent');
