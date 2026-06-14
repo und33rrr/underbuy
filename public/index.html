@@ -2,330 +2,782 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>UnderBuy CRM</title>
+    <link rel="manifest" href="/manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h1 { color: #2c3e50; margin-bottom: 5px; }
-        .subtitle { color: #7f8c8d; margin-top: 0; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #555; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        button { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        button:hover { background-color: #2980b9; }
-        button.secondary { background-color: #95a5a6; }
-        button.danger { background-color: #e74c3c; }
-        button.success { background-color: #27ae60; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { background-color: #f8f9fa; padding: 12px 8px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #dee2e6; }
-        td { padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        tr:hover { background-color: #f8f9fa; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .status-created { background: #ffeaa7; color: #d68910; }
-        .status-transit { background: #81ecec; color: #00838f; }
-        .status-received { background: #a29bfe; color: #4a3f8b; }
-        .status-sent { background: #55efc4; color: #00695c; }
-        .status-completed { background: #b2bec3; color: #2d3436; }
-        .search-box { margin-bottom: 15px; }
-        .search-box input { width: 300px; display: inline-block; }
-        .total-bar { text-align: right; font-weight: bold; padding: 10px; background: #ecf0f1; border-radius: 5px; margin-bottom: 10px; }
-        .flex-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-        .result-box { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 15px 0; font-size: 18px; }
-        .result-box span { font-weight: bold; color: #2c3e50; }
-        .note { font-size: 12px; color: #7f8c8d; margin-top: 5px; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:#f8f9fa;
+            --surface:#ffffff;
+            --text:#111827;
+            --text-secondary:#4b5563;
+            --text-tertiary:#9ca3af;
+            --border:#e5e7eb;
+            --border-light:#f3f4f6;
+            --accent:#2563eb;
+            --accent-light:#eff6ff;
+            --green:#059669;
+            --green-light:#ecfdf5;
+            --red:#dc2626;
+            --red-light:#fef2f2;
+            --orange:#d97706;
+            --orange-light:#fffbeb;
+            --radius:12px;
+            --radius-sm:8px;
+        }
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+            background:var(--bg);color:var(--text);
+            min-height:100vh;-webkit-font-smoothing:antialiased;
+            padding-bottom:80px;line-height:1.5;
+        }
+        .top-bar{
+            position:sticky;top:0;z-index:100;
+            background:rgba(248,249,250,0.9);backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
+            padding:20px 20px 14px;border-bottom:1px solid var(--border);
+        }
+        .top-bar h1{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+        .top-bar .subtitle{font-size:13px;color:var(--text-tertiary);margin-top:1px}
+
+        .tab-bar{
+            position:fixed;bottom:0;left:0;right:0;z-index:100;
+            background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
+            border-top:1px solid var(--border);
+            display:flex;padding:4px 0 env(safe-area-inset-bottom,6px);
+        }
+        .tab-btn{
+            flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+            padding:8px 4px 6px;background:none;border:none;color:var(--text-tertiary);
+            font-size:10px;font-weight:500;cursor:pointer;transition:color .15s;
+            -webkit-tap-highlight-color:transparent;
+        }
+        .tab-btn.active{color:var(--accent)}
+        .tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+        .page{display:none;padding:16px 20px 24px;max-width:560px;margin:0 auto}
+        .page.active{display:block}
+
+        .section-title{
+            font-size:13px;font-weight:600;color:var(--text-tertiary);
+            text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;
+        }
+
+        .card{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:20px;margin-bottom:12px;
+        }
+
+        .input-group{margin-bottom:16px}
+        .input-group:last-child{margin-bottom:0}
+        .input-group label{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:6px;font-weight:500}
+        .input-group input,.input-group select,.input-group textarea{
+            width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);
+            border-radius:var(--radius-sm);color:var(--text);font-size:16px;
+            outline:none;transition:border-color .15s;font-family:inherit;
+        }
+        .input-group input:focus,.input-group select:focus,.input-group textarea:focus{
+            border-color:var(--accent);
+        }
+        .input-group select{
+            appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;background-position:right 12px center;
+        }
+        .input-group textarea{resize:vertical;min-height:64px}
+
+        .row{display:grid;gap:12px}
+        .row-2{grid-template-columns:1fr 1fr}
+
+        .btn{
+            display:inline-flex;align-items:center;justify-content:center;gap:6px;
+            padding:12px 20px;border:none;border-radius:var(--radius-sm);
+            font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;
+            font-family:inherit;width:100%;-webkit-tap-highlight-color:transparent;
+        }
+        .btn:active{opacity:0.85;transform:scale(0.98)}
+        .btn-primary{background:var(--accent);color:#fff}
+        .btn-primary:hover{background:#1d4ed8}
+        .btn-green{background:var(--green);color:#fff}
+        .btn-green:hover{background:#047857}
+        .btn-ghost{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+        .btn-ghost:hover{background:var(--border-light)}
+        .btn-red{background:var(--red);color:#fff}
+        .btn-red:hover{background:#b91c1c}
+        .btn-sm{padding:8px 14px;font-size:13px;width:auto}
+
+        /* ── Calculator ── */
+        .delivery-toggle{display:flex;gap:10px;margin-bottom:16px}
+        .delivery-option{
+            flex:1;padding:16px;background:var(--bg);border:2px solid var(--border);
+            border-radius:var(--radius);cursor:pointer;text-align:center;transition:all .15s;
+        }
+        .delivery-option.active{border-color:var(--accent);background:var(--accent-light)}
+        .delivery-option .icon{font-size:28px;margin-bottom:6px;display:flex;justify-content:center}
+        .delivery-option.active .icon{color:var(--accent)}
+        .delivery-option .label{font-size:13px;color:var(--text-secondary);font-weight:500}
+        .delivery-option.active .label{color:var(--accent);font-weight:600}
+
+        .empty-state{text-align:center;padding:48px 20px;color:var(--text-tertiary)}
+        .empty-state svg{width:48px;height:48px;stroke:var(--text-tertiary);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;margin-bottom:14px;opacity:0.4}
+        .empty-state p{font-size:14px}
+
+        .hint{font-size:12px;color:var(--text-tertiary);text-align:center;margin-top:10px}
+
+        .currency-toggle{display:flex;gap:10px;margin-bottom:16px}
+        .currency-btn{
+            flex:1;padding:10px;background:var(--bg);border:2px solid var(--border);
+            border-radius:var(--radius-sm);cursor:pointer;text-align:center;transition:all .15s;
+            font-size:14px;font-weight:600;color:var(--text-secondary);
+        }
+        .currency-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+        /* ── Results ── */
+        .result-block{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:20px;margin-top:12px;
+        }
+        .result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0}
+        .result-row+.result-row{border-top:1px solid var(--border-light)}
+        .result-label{font-size:14px;color:var(--text-secondary)}
+        .result-value{font-size:18px;font-weight:800;color:var(--text)}
+        .result-value.green{color:#16a34a}
+        .result-value.blue{color:var(--text)}
+        .result-value.secondary{font-size:14px;color:var(--text-tertiary);font-weight:500}
+
+        /* ── Prepayment ── */
+        .prepayment-row{display:flex;gap:8px;align-items:center}
+        .prepayment-row input{flex:1}
+        .prepayment-type{display:flex;gap:4px}
+        .prepayment-type button{
+            padding:11px 12px;background:var(--bg);border:2px solid var(--border);
+            border-radius:var(--radius-sm);color:var(--text-secondary);font-size:13px;font-weight:600;
+            cursor:pointer;transition:all .15s;font-family:inherit;
+        }
+        .prepayment-type button.active{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+        /* ── Dashboard ── */
+        .hero-stat{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:24px 20px;margin-bottom:12px;
+            text-align:center;
+        }
+        .hero-stat .label{font-size:13px;color:var(--text-tertiary);font-weight:500;margin-bottom:4px}
+        .hero-stat .value{font-size:34px;font-weight:900;letter-spacing:-1.5px;color:var(--text)}
+        .hero-stat .value.positive{color:#16a34a}
+        .hero-stat .value.negative{color:var(--red)}
+        .hero-stat .sub{font-size:13px;color:var(--text-tertiary);margin-top:4px}
+
+        .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+        .stat-card{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:16px;
+        }
+        .stat-card .label{font-size:12px;color:var(--text-tertiary);font-weight:500;margin-bottom:4px}
+        .stat-card .value{font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text)}
+        .stat-card .value.green{color:#16a34a}
+        .stat-card .value.blue{color:var(--text)}
+        .stat-card .value.orange{color:var(--text)}
+
+        /* ── Orders ── */
+        .order-card{
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:16px;margin-bottom:8px;
+            cursor:pointer;transition:all .15s;
+        }
+        .order-card:hover{border-color:#d1d5db}
+        .order-card:active{background:#fafafa}
+        .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .order-product{font-size:15px;font-weight:600;color:var(--text)}
+        .order-price{font-size:14px;font-weight:800;color:var(--text)}
+        .order-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .order-meta span{font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px}
+        .order-profit{font-size:12px;color:#16a34a;margin-top:6px;font-weight:700}
+
+        /* ── Badges ── */
+        .badge{
+            display:inline-flex;align-items:center;gap:5px;
+            padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600;
+        }
+        .badge-auto{background:var(--accent-light);color:var(--accent)}
+        .badge-avia{background:#faf5ff;color:#7c3aed}
+        .badge-transit{background:var(--accent-light);color:var(--accent)}
+        .badge-received{background:#faf5ff;color:#7c3aed}
+        .badge-sent{background:var(--green-light);color:var(--green)}
+        .badge-completed{background:var(--bg);color:var(--text-tertiary)}
+        .badge-pending{background:var(--orange-light);color:var(--orange)}
+        .badge-dot{
+            width:6px;height:6px;border-radius:50%;background:currentColor;
+            animation:pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+        /* ── Search ── */
+        .search-box{position:relative;margin-bottom:12px}
+        .search-box input{
+            width:100%;padding:12px 14px 12px 42px;background:var(--surface);
+            border:1px solid var(--border);border-radius:var(--radius-sm);
+            color:var(--text);font-size:15px;outline:none;transition:border-color .15s;
+        }
+        .search-box input:focus{border-color:var(--accent)}
+        .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--text-tertiary);fill:none;stroke-width:2}
+
+        /* ── Filters ── */
+        .filter-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+        .filter-row::-webkit-scrollbar{display:none}
+        .filter-chip{
+            padding:6px 14px;background:var(--surface);border:1px solid var(--border);
+            border-radius:6px;font-size:13px;font-weight:500;color:var(--text-secondary);
+            cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;
+        }
+        .filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+        /* ── Settings ── */
+        .settings-row{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:16px 0;border-bottom:1px solid var(--border-light);
+        }
+        .settings-row:last-child{border:none}
+        .settings-label{font-size:15px;color:var(--text);font-weight:500}
+        .settings-sublabel{font-size:12px;color:var(--text-tertiary);margin-top:2px}
+        .settings-input{
+            width:110px;padding:10px 12px;background:var(--bg);
+            border:1px solid var(--border);border-radius:var(--radius-sm);
+            color:var(--text);font-size:16px;text-align:right;outline:none;
+            font-weight:600;transition:border-color .15s;
+        }
+        .settings-input:focus{border-color:var(--accent)}
+
+        /* ── Modal ── */
+        .modal-overlay{
+            display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);
+            z-index:200;align-items:flex-end;justify-content:center;
+        }
+        .modal-overlay.open{display:flex}
+        .modal{
+            background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;
+            padding:24px 20px 32px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;
+            animation:slideUp .25s ease-out;
+            border:1px solid var(--border);border-bottom:none;
+        }
+        @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .modal-header h3{font-size:18px;font-weight:700;color:var(--text)}
+        .modal-close{
+            width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+            background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+            color:var(--text-secondary);font-size:18px;cursor:pointer;transition:all .15s;
+        }
+        .modal-close:hover{background:var(--border)}
+
+        /* ── Period toggle ── */
+        .period-toggle{display:flex;gap:6px;margin-bottom:14px}
+        .period-btn{
+            padding:7px 14px;background:var(--surface);border:1px solid var(--border);
+            border-radius:6px;font-size:13px;font-weight:500;color:var(--text-secondary);
+            cursor:pointer;transition:all .15s;font-family:inherit;
+        }
+        .period-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+        .empty-state{text-align:center;padding:48px 20px;color:var(--text-tertiary)}
+        .empty-state .icon{font-size:48px;margin-bottom:12px;display:block;opacity:0.5}
+        .empty-state p{font-size:14px}
+
+        .hint{font-size:12px;color:var(--text-tertiary);text-align:center;margin-top:10px}
+
+        @media(max-width:400px){
+            .row-2{grid-template-columns:1fr}
+            .stat-grid{grid-template-columns:1fr}
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🛒 UnderBuy CRM</h1>
-    <p class="subtitle">Калькулятор + Учет заказов</p>
-    
-    <div class="card">
-        <h2>🧮 Калькулятор стоимости</h2>
-        <div class="grid-2">
-            <div>
-                <div class="form-group">
-                    <label>Цена товара (в юанях)</label>
-                    <input type="number" id="calc_price_cny" placeholder="100" step="0.01">
+    <div class="top-bar">
+        <h1>UnderBuy</h1>
+        <div class="subtitle">Калькулятор + CRM</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+        <div class="period-toggle">
+            <button class="period-btn active" data-period="all" onclick="setDashPeriod(this,'all')">Все время</button>
+            <button class="period-btn" data-period="month" onclick="setDashPeriod(this,'month')">Месяц</button>
+            <button class="period-btn" data-period="week" onclick="setDashPeriod(this,'week')">Неделя</button>
+        </div>
+        <div id="dash-hero"></div>
+        <div class="stat-grid" id="dash-stats"></div>
+        <div class="section-title">Активные заказы</div>
+        <div id="dash-orders"></div>
+    </div>
+
+    <!-- CALCULATOR -->
+    <div class="page" id="page-calc">
+        <div class="card">
+            <div class="section-title">Расчёт стоимости</div>
+            <div class="delivery-toggle">
+                <div class="delivery-option active" id="del-auto" onclick="setDelivery('auto')">
+                    <div class="icon">🚗</div>
+                    <span class="label">АВТО · 6 $/кг</span>
                 </div>
-                <div class="form-group">
+                <div class="delivery-option" id="del-avia" onclick="setDelivery('avia')">
+                    <div class="icon">✈️</div>
+                    <span class="label">АВИА · 120 ¥/кг</span>
+                </div>
+            </div>
+            <div class="currency-toggle">
+                <div class="currency-btn active" id="cur-byn" onclick="setCurrency('BYN')">BYN</div>
+                <div class="currency-btn" id="cur-rub" onclick="setCurrency('RUB')">RUB</div>
+            </div>
+            <div class="row row-2">
+                <div class="input-group">
+                    <label>Цена товара (¥)</label>
+                    <input type="number" id="c-price" placeholder="0" step="0.01" oninput="calc()">
+                </div>
+                <div class="input-group">
                     <label>Вес (кг)</label>
-                    <input type="number" id="calc_weight" placeholder="1.3" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Курс юаня к BYN</label>
-                    <input type="number" id="calc_rate_cny" value="0.44" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Тип доставки</label>
-                    <select id="calc_delivery_type">
-                        <option value="auto">🚗 АВТО (машина) - 6$/кг</option>
-                        <option value="avia">✈️ АВИА (самолет) - 120¥/кг</option>
-                    </select>
+                    <input type="number" id="c-weight" placeholder="0" step="0.01" oninput="calc()">
                 </div>
             </div>
-            <div>
-                <div class="form-group" id="calc_dollar_rate_group">
-                    <label>Курс доллара к BYN (для авто)</label>
-                    <input type="number" id="calc_rate_usd" value="3.2" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Моя наценка (BYN)</label>
-                    <input type="number" id="calc_margin" placeholder="40" step="1">
-                </div>
-                <button onclick="calculatePrice()" style="width:100%; margin-top:20px; font-size:18px;">💰 Рассчитать</button>
-                <div class="result-box" id="result_box" style="display:none;">
-                    <p>Стоимость для клиента (BYN): <span id="result_byn"></span></p>
-                    <p>Примерно в RUB: <span id="result_rub"></span></p>
-                    <button class="success" onclick="copyResultToOrder()" style="font-size:14px;">📋 Использовать в заказе</button>
-                </div>
+            <div class="input-group">
+                <label>Моя наценка (BYN)</label>
+                <input type="number" id="c-margin" placeholder="0" step="1" oninput="calc()">
+            </div>
+        </div>
+        <div class="result-block" id="calc-results" style="display:none">
+            <div class="result-row">
+                <span class="result-label">Цена для клиента</span>
+                <span class="result-value blue" id="r-client">0 BYN</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Себестоимость</span>
+                <span class="result-value" id="r-cost">0 BYN</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Чистая прибыль</span>
+                <span class="result-value green" id="r-profit">0 BYN</span>
+            </div>
+            <div class="result-row" id="r-rub-row" style="display:none">
+                <span class="result-label">Для клиента в RUB</span>
+                <span class="result-value secondary" id="r-rub">0 ₽</span>
+            </div>
+            <div style="margin-top:16px">
+                <button class="btn btn-primary" onclick="useInOrder()">Создать заказ</button>
             </div>
         </div>
     </div>
 
-    <div class="card" id="order_form_card">
-        <h2>📝 Новый заказ</h2>
-        <div class="grid-2">
-            <div>
-                <div class="form-group">
-                    <label>Название товара</label>
-                    <input type="text" id="order_product_name" placeholder="Штаны Balenciaga, S">
-                </div>
-                <div class="form-group">
-                    <label>Юзернейм клиента в TG</label>
-                    <input type="text" id="order_client_username" placeholder="@emoemoemokid">
-                </div>
-                <div class="form-group">
-                    <label>Способ доставки</label>
-                    <select id="order_delivery_method">
-                        <option value="✈️ АВИА">✈️ АВИА (самолет)</option>
-                        <option value="🚗 АВТО">🚗 АВТО (машина)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Статус</label>
-                    <select id="order_status">
-                        <option value="Создан">🟡 Создан</option>
-                        <option value="В пути (Китай)">🔵 В пути (Китай)</option>
-                        <option value="Получен мной">🟣 Получен мной</option>
-                        <option value="Отправлен клиенту">🟢 Отправлен клиенту</option>
-                        <option value="Завершен">⚫ Завершен</option>
-                    </select>
-                </div>
-            </div>
-            <div>
-                <div class="form-group">
-                    <label>Предоплата (BYN)</label>
-                    <input type="number" id="order_prepayment" placeholder="40" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Полная стоимость для клиента (BYN)</label>
-                    <input type="number" id="order_full_price" placeholder="200" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Трек-номер</label>
-                    <input type="text" id="order_track_number" placeholder="YT7620355727614">
-                </div>
-                <div class="form-group">
-                    <label>Карта (на которую принята оплата)</label>
-                    <input type="text" id="order_card_used" placeholder="1 КАРТА">
-                </div>
-                <div class="form-group">
-                    <label>Комментарий</label>
-                    <textarea id="order_comment" rows="2" placeholder="Любые заметки..."></textarea>
-                </div>
-                <input type="hidden" id="order_edit_id">
-                <div class="flex-buttons">
-                    <button onclick="saveOrder()" class="success">✅ Сохранить заказ</button>
-                    <button onclick="clearOrderForm()" class="secondary">🔄 Очистить форму</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>📋 Все заказы</h2>
+    <!-- ORDERS -->
+    <div class="page" id="page-orders">
         <div class="search-box">
-            <input type="text" id="search_input" placeholder="🔍 Поиск по всему (юз, трек, название, карта)..." oninput="loadOrders()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" id="search" placeholder="Поиск по юзеру, треку, названию..." oninput="debounceSearch()">
         </div>
-        <div id="orders_table_container">
-            <p>Загрузка...</p>
+        <div class="filter-row" id="status-filters"></div>
+        <div id="orders-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+        <div class="card">
+            <div class="section-title">Курсы валют</div>
+            <div class="settings-row">
+                <div>
+                    <div class="settings-label">Юань для клиента</div>
+                    <div class="settings-sublabel">BYN за 1 ¥</div>
+                </div>
+                <input class="settings-input" type="number" id="s-rate-cny-client" step="0.01" onchange="saveSettings()">
+            </div>
+            <div class="settings-row">
+                <div>
+                    <div class="settings-label">Мой реальный курс ¥</div>
+                    <div class="settings-sublabel">Реальная цена за 1 ¥</div>
+                </div>
+                <input class="settings-input" type="number" id="s-rate-cny-my" step="0.01" onchange="saveSettings()">
+            </div>
+            <div class="settings-row">
+                <div>
+                    <div class="settings-label">USD → BYN</div>
+                    <div class="settings-sublabel">Для доставки АВТО</div>
+                </div>
+                <input class="settings-input" type="number" id="s-rate-usd" step="0.01" onchange="saveSettings()">
+            </div>
+            <div class="settings-row">
+                <div>
+                    <div class="settings-label">BYN → RUB</div>
+                    <div class="settings-sublabel">С учётом комиссий</div>
+                </div>
+                <input class="settings-input" type="number" id="s-rate-rub" step="0.01" onchange="saveSettings()">
+            </div>
+        </div>
+        <p class="hint">Настройки сохраняются автоматически</p>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="order-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Новый заказ</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <input type="hidden" id="m-id">
+            <div class="input-group">
+                <label>Название товара</label>
+                <input type="text" id="m-product" placeholder="Штаны, размер M">
+            </div>
+            <div class="input-group">
+                <label>Telegram username</label>
+                <input type="text" id="m-username" placeholder="@client">
+            </div>
+            <div class="row row-2">
+                <div class="input-group">
+                    <label>Цена клиента (BYN)</label>
+                    <input type="number" id="m-price" step="0.01" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>Себестоимость (BYN)</label>
+                    <input type="number" id="m-cost" step="0.01" placeholder="0">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Предоплата</label>
+                <div class="prepayment-row">
+                    <input type="number" id="m-prepay" step="0.01" placeholder="0">
+                    <div class="prepayment-type">
+                        <button class="active" id="m-pt-full" onclick="setPrepayType('full')">BYN</button>
+                        <button id="m-pt-percent" onclick="setPrepayType('percent')">% суммы</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row row-2">
+                <div class="input-group">
+                    <label>Доставка</label>
+                    <select id="m-delivery">
+                        <option value="auto">🚗 АВТО</option>
+                        <option value="avia">✈️ АВИА</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Валюта</label>
+                    <select id="m-currency">
+                        <option value="BYN">BYN</option>
+                        <option value="RUB">RUB</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Статус</label>
+                <select id="m-status">
+                    <option value="В пути">🟢 В пути</option>
+                    <option value="Получен мной">📦 Получен мной</option>
+                    <option value="Отправлен клиенту">📮 Отправлен клиенту</option>
+                    <option value="Завершен">✅ Завершен</option>
+                </select>
+            </div>
+            <div class="row row-2">
+                <div class="input-group">
+                    <label>Карта</label>
+                    <input type="text" id="m-card" placeholder="Номер карты">
+                </div>
+                <div class="input-group">
+                    <label>Трек-номер</label>
+                    <input type="text" id="m-track" placeholder="YT...">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Комментарий</label>
+                <textarea id="m-comment" rows="2" placeholder="Заметки..."></textarea>
+            </div>
+            <input type="hidden" id="m-price-cny">
+            <input type="hidden" id="m-weight-kg">
+            <input type="hidden" id="m-margin-byn">
+            <div style="display:flex;gap:8px;margin-top:4px">
+                <button class="btn btn-green" onclick="saveOrder()" id="m-save-btn" style="flex:1">Сохранить</button>
+                <button class="btn btn-ghost" onclick="closeModal()" style="flex:0 0 auto;padding:12px 20px">Отмена</button>
+            </div>
+            <div id="m-delete-container" style="margin-top:12px;display:none">
+                <button class="btn btn-red btn-sm" onclick="deleteOrder()" style="width:100%">Удалить заказ</button>
+            </div>
         </div>
     </div>
-</div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('dashboard',this)">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            Главная
+        </button>
+        <button class="tab-btn" onclick="switchTab('calc',this)">
+            <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+            Калькулятор
+        </button>
+        <button class="tab-btn" onclick="switchTab('orders',this)">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Заказы
+        </button>
+        <button class="tab-btn" onclick="switchTab('settings',this)">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Настройки
+        </button>
+    </div>
 
 <script>
-// Переключение видимости поля курса доллара
-document.getElementById('calc_delivery_type').addEventListener('change', function() {
-    const dollarGroup = document.getElementById('calc_dollar_rate_group');
-    if (this.value === 'avia') {
-        dollarGroup.style.display = 'none';
-    } else {
-        dollarGroup.style.display = 'block';
-    }
-});
+const SUPABASE_URL='https://oskwzcuyjfmqzgkmmxwy.supabase.co';
+const SUPABASE_KEY='sb_publishable_LTRg3IwxMhQ25HSELTvnfg_sMv81vw6';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let calculatedByn = 0;
+let SETTINGS={};
+let calcDelivery='auto',calcCurrency='BYN',currentPeriod='all',currentStatusFilter='all';
+let searchTimeout=null,lastCalcResult={};
 
-function calculatePrice() {
-    const priceCny = parseFloat(document.getElementById('calc_price_cny').value) || 0;
-    const weight = parseFloat(document.getElementById('calc_weight').value) || 0;
-    const rateCny = parseFloat(document.getElementById('calc_rate_cny').value) || 0.44;
-    const deliveryType = document.getElementById('calc_delivery_type').value;
-    const rateUsd = parseFloat(document.getElementById('calc_rate_usd').value) || 3.2;
-    const margin = parseFloat(document.getElementById('calc_margin').value) || 0;
-    
-    let total;
-    if (deliveryType === 'auto') {
-        total = (priceCny * rateCny) + (6 * weight * rateUsd) + margin;
-    } else {
-        total = ((priceCny + 120 * weight) * rateCny) + margin;
-    }
-    
-    calculatedByn = total.toFixed(2);
-    const rub = (total * 30.5).toFixed(0); // Примерный курс BYN/RUB для ориентира, можно поменять
-    
-    document.getElementById('result_byn').innerText = calculatedByn + ' BYN';
-    document.getElementById('result_rub').innerText = '≈ ' + rub + ' RUB (курс ~30.5)';
-    document.getElementById('result_box').style.display = 'block';
+async function loadSettings(){
+    const{data}=await sb.from('settings').select('*');
+    SETTINGS={};
+    (data||[]).forEach(r=>{SETTINGS[r.key]=r.value});
+    document.getElementById('s-rate-cny-client').value=SETTINGS.rate_cny_client||0.44;
+    document.getElementById('s-rate-cny-my').value=SETTINGS.rate_cny_my||0.43;
+    document.getElementById('s-rate-usd').value=SETTINGS.rate_usd_byn||3.0;
+    document.getElementById('s-rate-rub').value=SETTINGS.rate_byn_rub||29.5;
 }
-
-function copyResultToOrder() {
-    document.getElementById('order_full_price').value = calculatedByn;
-    document.getElementById('order_delivery_method').value = 
-        document.getElementById('calc_delivery_type').value === 'auto' ? '🚗 АВТО' : '✈️ АВИА';
-    document.getElementById('order_form_card').scrollIntoView({ behavior: 'smooth' });
+async function saveSettings(){
+    SETTINGS.rate_cny_client=parseFloat(document.getElementById('s-rate-cny-client').value)||0;
+    SETTINGS.rate_cny_my=parseFloat(document.getElementById('s-rate-cny-my').value)||0;
+    SETTINGS.rate_usd_byn=parseFloat(document.getElementById('s-rate-usd').value)||0;
+    SETTINGS.rate_byn_rub=parseFloat(document.getElementById('s-rate-rub').value)||0;
+    const rows=Object.entries(SETTINGS).map(([key,value])=>({key,value}));
+    await sb.from('settings').upsert(rows,{onConflict:'key'});
+    calc();
 }
-
-function saveOrder() {
-    const id = document.getElementById('order_edit_id').value;
-    const orderData = {
-        product_name: document.getElementById('order_product_name').value,
-        client_username: document.getElementById('order_client_username').value,
-        prepayment: document.getElementById('order_prepayment').value || 0,
-        full_price_byn: document.getElementById('order_full_price').value || 0,
-        delivery_method: document.getElementById('order_delivery_method').value,
-        track_number: document.getElementById('order_track_number').value,
-        status: document.getElementById('order_status').value,
-        comment: document.getElementById('order_comment').value,
-        card_used: document.getElementById('order_card_used').value
+function switchTab(page,btn){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(page==='dashboard')loadDashboard();
+    if(page==='orders')loadOrders();
+}
+function setDelivery(type){
+    calcDelivery=type;
+    document.getElementById('del-auto').classList.toggle('active',type==='auto');
+    document.getElementById('del-avia').classList.toggle('active',type==='avia');
+    calc();
+}
+function setCurrency(c){
+    calcCurrency=c;
+    document.getElementById('cur-byn').classList.toggle('active',c==='BYN');
+    document.getElementById('cur-rub').classList.toggle('active',c==='RUB');
+    calc();
+}
+function getCargoTariff(w){if(w<=3)return 120;if(w<=5)return 110;return 100}
+function calc(){
+    const p=parseFloat(document.getElementById('c-price').value)||0;
+    const w=parseFloat(document.getElementById('c-weight').value)||0;
+    const m=parseFloat(document.getElementById('c-margin').value)||0;
+    const rc=SETTINGS.rate_cny_client||0.44,rm=SETTINGS.rate_cny_my||0.43;
+    const usd=SETTINGS.rate_usd_byn||3.0,rubR=SETTINGS.rate_byn_rub||29.5;
+    let cByn,rCost;
+    if(calcDelivery==='auto'){
+        cByn=(p*rc)+(6*w*usd)+m;rCost=(p*rm)+(6*w*usd);
+    }else{
+        cByn=(p+(120*w))*rc+m;const t=getCargoTariff(w);rCost=(p+(t*w))*rm;
+    }
+    if(calcCurrency==='RUB')cByn=cByn*rubR;
+    const profit=cByn-rCost;
+    lastCalcResult={clientByn:cByn,realCostByn:rCost,profit,priceCny:p,weight:w,margin:m,calcDelivery,calcCurrency};
+    document.getElementById('r-client').textContent=calcCurrency==='RUB'?fmt(cByn,'₽'):fmt(cByn,'BYN');
+    document.getElementById('r-cost').textContent=fmt(rCost,'BYN');
+    document.getElementById('r-profit').textContent=fmt(profit,'BYN');
+    const rr=document.getElementById('r-rub-row');
+    if(calcCurrency==='RUB'){rr.style.display='none'}
+    else{rr.style.display='flex';document.getElementById('r-rub').textContent=fmt(cByn*rubR,'₽')}
+    document.getElementById('calc-results').style.display='block';
+}
+function fmt(v,c){return v.toFixed(2)+' '+c}
+function useInOrder(){
+    document.getElementById('m-price').value=lastCalcResult.clientByn.toFixed(2);
+    document.getElementById('m-cost').value=lastCalcResult.realCostByn.toFixed(2);
+    document.getElementById('m-delivery').value=lastCalcResult.calcDelivery==='auto'?'auto':'avia';
+    document.getElementById('m-currency').value=lastCalcResult.calcCurrency;
+    document.getElementById('m-price-cny').value=lastCalcResult.priceCny;
+    document.getElementById('m-weight-kg').value=lastCalcResult.weight;
+    document.getElementById('m-margin-byn').value=lastCalcResult.margin;
+    document.getElementById('m-id').value='';
+    document.getElementById('m-save-btn').textContent='Создать заказ';
+    document.getElementById('modal-title').textContent='Новый заказ';
+    document.getElementById('m-delete-container').style.display='none';
+    openModal();
+}
+function openModal(){document.getElementById('order-modal').classList.add('open')}
+function closeModal(){document.getElementById('order-modal').classList.remove('open')}
+function setPrepayType(t){
+    document.getElementById('m-pt-full').classList.toggle('active',t==='full');
+    document.getElementById('m-pt-percent').classList.toggle('active',t==='percent');
+}
+async function saveOrder(){
+    const id=document.getElementById('m-id').value;
+    const price=parseFloat(document.getElementById('m-price').value)||0;
+    const cost=parseFloat(document.getElementById('m-cost').value)||0;
+    const pVal=parseFloat(document.getElementById('m-prepay').value)||0;
+    const isP=document.getElementById('m-pt-percent').classList.contains('active');
+    const data={
+        product_name:document.getElementById('m-product').value,
+        client_username:document.getElementById('m-username').value,
+        full_price_byn:price,real_cost_byn:cost,profit_byn:price-cost,
+        prepayment_amount:pVal,prepayment_type:isP?'percent':'full',
+        delivery_type:document.getElementById('m-delivery').value,
+        client_currency:document.getElementById('m-currency').value,
+        status:document.getElementById('m-status').value,
+        card_used:document.getElementById('m-card').value,
+        track_number:document.getElementById('m-track').value,
+        comment:document.getElementById('m-comment').value,
+        price_cny:parseFloat(document.getElementById('m-price-cny').value)||0,
+        weight_kg:parseFloat(document.getElementById('m-weight-kg').value)||0,
+        margin_byn:parseFloat(document.getElementById('m-margin-byn').value)||0
     };
-    
-    const url = id ? `/api/orders/${id}` : '/api/orders';
-    const method = id ? 'PUT' : 'POST';
-    
-    fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-    })
-    .then(r => r.json())
-    .then(() => {
-        clearOrderForm();
-        loadOrders();
-    });
-}
-
-function clearOrderForm() {
-    document.getElementById('order_edit_id').value = '';
-    document.getElementById('order_product_name').value = '';
-    document.getElementById('order_client_username').value = '';
-    document.getElementById('order_prepayment').value = '';
-    document.getElementById('order_full_price').value = '';
-    document.getElementById('order_delivery_method').value = '✈️ АВИА';
-    document.getElementById('order_track_number').value = '';
-    document.getElementById('order_status').value = 'Создан';
-    document.getElementById('order_comment').value = '';
-    document.getElementById('order_card_used').value = '';
-}
-
-function loadOrders() {
-    const search = document.getElementById('search_input')?.value || '';
-    fetch(`/api/orders?search=${encodeURIComponent(search)}`)
-    .then(r => r.json())
-    .then(orders => {
-        const container = document.getElementById('orders_table_container');
-        if (orders.length === 0) {
-            container.innerHTML = '<p>Нет заказов. Создайте первый!</p>';
-            return;
-        }
-        
-        let totalByn = 0;
-        let html = '<table><thead><tr><th>Товар</th><th>Клиент</th><th>Предоплата</th><th>Полная цена</th><th>Доставка</th><th>Трек</th><th>Статус</th><th>Карта</th><th>Коммент</th><th></th></tr></thead><tbody>';
-        
-        orders.forEach(o => {
-            totalByn += o.full_price_byn || 0;
-            const statusClass = getStatusClass(o.status);
-            html += `<tr>
-                <td><strong>${escapeHtml(o.product_name || '')}</strong></td>
-                <td>${escapeHtml(o.client_username || '')}</td>
-                <td>${o.prepayment ? o.prepayment + ' BYN' : '-'}</td>
-                <td>${o.full_price_byn ? o.full_price_byn + ' BYN' : '-'}</td>
-                <td>${escapeHtml(o.delivery_method || '')}</td>
-                <td>${escapeHtml(o.track_number || '')}</td>
-                <td><span class="badge ${statusClass}">${escapeHtml(o.status || '')}</span></td>
-                <td>${escapeHtml(o.card_used || '')}</td>
-                <td style="max-width:100px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(o.comment || '')}</td>
-                <td>
-                    <button onclick="editOrder(${o.id})" class="secondary" style="padding:5px 8px; font-size:12px;">✏️</button>
-                    <button onclick="deleteOrder(${o.id})" class="danger" style="padding:5px 8px; font-size:12px;">🗑️</button>
-                </td>
-            </tr>`;
-        });
-        
-        html += '</tbody></table>';
-        html += `<div class="total-bar">💰 Общая сумма заказов: <strong>${totalByn.toFixed(2)} BYN</strong> | Всего: ${orders.length} шт.</div>`;
-        container.innerHTML = html;
-    });
-}
-
-function getStatusClass(status) {
-    if (!status) return '';
-    if (status.includes('Создан')) return 'status-created';
-    if (status.includes('В пути')) return 'status-transit';
-    if (status.includes('Получен')) return 'status-received';
-    if (status.includes('Отправлен')) return 'status-sent';
-    if (status.includes('Завершен')) return 'status-completed';
-    return '';
-}
-
-function editOrder(id) {
-    fetch('/api/orders')
-    .then(r => r.json())
-    .then(orders => {
-        const order = orders.find(o => o.id === id);
-        if (!order) return;
-        document.getElementById('order_edit_id').value = order.id;
-        document.getElementById('order_product_name').value = order.product_name || '';
-        document.getElementById('order_client_username').value = order.client_username || '';
-        document.getElementById('order_prepayment').value = order.prepayment || '';
-        document.getElementById('order_full_price').value = order.full_price_byn || '';
-        document.getElementById('order_delivery_method').value = order.delivery_method || '✈️ АВИА';
-        document.getElementById('order_track_number').value = order.track_number || '';
-        document.getElementById('order_status').value = order.status || 'Создан';
-        document.getElementById('order_comment').value = order.comment || '';
-        document.getElementById('order_card_used').value = order.card_used || '';
-        document.getElementById('order_form_card').scrollIntoView({ behavior: 'smooth' });
-    });
-}
-
-function deleteOrder(id) {
-    if (confirm('Точно удалить этот заказ? Это необратимо.')) {
-        fetch(`/api/orders/${id}`, { method: 'DELETE' })
-        .then(() => loadOrders());
+    if(id){
+        await sb.from('orders').update(data).eq('id',id);
+    }else{
+        await sb.from('orders').insert(data);
     }
+    closeModal();clearModal();loadOrders();loadDashboard();
 }
-
-function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function clearModal(){
+    ['m-id','m-product','m-username','m-price','m-cost','m-prepay','m-track','m-card','m-comment','m-price-cny','m-weight-kg','m-margin-byn'].forEach(i=>{document.getElementById(i).value=''});
+    document.getElementById('m-status').value='В пути';
+    document.getElementById('m-delivery').value='auto';
+    document.getElementById('m-currency').value='BYN';
+    setPrepayType('full');
+    document.getElementById('m-save-btn').textContent='Создать заказ';
+    document.getElementById('modal-title').textContent='Новый заказ';
+    document.getElementById('m-delete-container').style.display='none';
 }
-
-// Загрузить заказы при старте
-loadOrders();
+async function editOrder(id){
+    const{data:o}=await sb.from('orders').select('*').eq('id',id).single();
+    document.getElementById('m-id').value=o.id;
+    document.getElementById('m-product').value=o.product_name||'';
+    document.getElementById('m-username').value=o.client_username||'';
+    document.getElementById('m-price').value=o.full_price_byn||'';
+    document.getElementById('m-cost').value=o.real_cost_byn||'';
+    document.getElementById('m-prepay').value=o.prepayment_amount||'';
+    document.getElementById('m-delivery').value=o.delivery_type||'auto';
+    document.getElementById('m-currency').value=o.client_currency||'BYN';
+    document.getElementById('m-status').value=o.status||'В пути';
+    document.getElementById('m-card').value=o.card_used||'';
+    document.getElementById('m-track').value=o.track_number||'';
+    document.getElementById('m-comment').value=o.comment||'';
+    document.getElementById('m-price-cny').value=o.price_cny||'';
+    document.getElementById('m-weight-kg').value=o.weight_kg||'';
+    document.getElementById('m-margin-byn').value=o.margin_byn||'';
+    setPrepayType(o.prepayment_type||'full');
+    document.getElementById('m-save-btn').textContent='Обновить';
+    document.getElementById('modal-title').textContent='Редактировать заказ';
+    document.getElementById('m-delete-container').style.display='block';
+    openModal();
+}
+async function deleteOrder(){
+    const id=document.getElementById('m-id').value;
+    if(!id||!confirm('Удалить заказ?'))return;
+    await sb.from('orders').delete().eq('id',id);
+    closeModal();clearModal();loadOrders();loadDashboard();
+}
+function debounceSearch(){clearTimeout(searchTimeout);searchTimeout=setTimeout(loadOrders,250)}
+function getStatusBadge(s){
+    const m={'В пути':'badge-transit','Получен мной':'badge-received','Отправлен клиенту':'badge-sent','Завершен':'badge-completed'};
+    return '<span class="badge '+(m[s]||'badge-pending')+'"><span class="badge-dot"></span>'+s+'</span>';
+}
+function getDeliveryBadge(t){return t==='avia'?'<span class="badge badge-avia">✈️ АВИА</span>':'<span class="badge badge-auto">🚗 АВТО</span>'}
+function setDashPeriod(btn,p){
+    currentPeriod=p;
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');loadDashboard();
+}
+function periodFilter(q){
+    const now=Date.now();
+    if(currentPeriod==='month')q=q.gte('created_at',new Date(now-30*864e5).toISOString());
+    else if(currentPeriod==='week')q=q.gte('created_at',new Date(now-7*864e5).toISOString());
+    return q;
+}
+async function loadDashboard(){
+    let q=sb.from('orders').select('*');
+    q=periodFilter(q);
+    const{data:orders}=await q;
+    const list=orders||[];
+    const total_orders=list.length;
+    const total_revenue=list.reduce((s,o)=>s+(o.full_price_byn||0),0);
+    const total_cost=list.reduce((s,o)=>s+(o.real_cost_byn||0),0);
+    const total_profit=list.reduce((s,o)=>s+(o.profit_byn||0),0);
+    const total_prepaid=list.reduce((s,o)=>s+(o.prepayment_amount||0),0);
+    const stats={total_orders,total_revenue,total_cost,total_profit,total_prepaid};
+    const cls=stats.total_profit>=0?'positive':'negative';
+    document.getElementById('dash-hero').innerHTML=
+        '<div class="hero-stat">'+
+        '<div class="label">Чистая прибыль</div>'+
+        '<div class="value '+cls+'">'+fmt(stats.total_profit,'BYN')+'</div>'+
+        '<div class="sub">'+stats.total_orders+' заказов · Выручка '+fmt(stats.total_revenue,'BYN')+'</div>'+
+        '</div>';
+    document.getElementById('dash-stats').innerHTML=
+        '<div class="stat-card"><div class="label">Заказов</div><div class="value">'+stats.total_orders+'</div></div>'+
+        '<div class="stat-card"><div class="label">Выручка</div><div class="value">'+fmt(stats.total_revenue,'BYN')+'</div></div>'+
+        '<div class="stat-card"><div class="label">Себестоимость</div><div class="value">'+fmt(stats.total_cost,'BYN')+'</div></div>'+
+        '<div class="stat-card"><div class="label">Предоплаты</div><div class="value">'+fmt(stats.total_prepaid,'BYN')+'</div></div>';
+    const active=list.filter(o=>o.status!=='Завершен').slice(0,10);
+    const c=document.getElementById('dash-orders');
+    if(!active.length){c.innerHTML='<div class="empty-state"><span class="icon">📦</span><p>Нет активных заказов</p></div>';return}
+    c.innerHTML=active.map(o=>
+        '<div class="order-card" onclick="editOrder('+o.id+')">'+
+        '<div class="order-header">'+
+        '<span class="order-product">'+esc(o.product_name||'Без названия')+'</span>'+
+        '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' BYN':'—')+'</span>'+
+        '</div>'+
+        '<div class="order-meta">'+
+        '<span>'+esc(o.client_username||'—')+'</span>'+
+        getDeliveryBadge(o.delivery_type)+
+        getStatusBadge(o.status)+
+        '</div>'+
+        '<div class="order-profit">Прибыль: '+(o.profit_byn?o.profit_byn.toFixed(2):'0.00')+' BYN</div>'+
+        '</div>'
+    ).join('');
+}
+async function loadOrders(){
+    const s=document.getElementById('search')?.value||'';
+    let q=sb.from('orders').select('*');
+    if(s){
+        q=q.or('product_name.ilike.%'+s+'%,client_username.ilike.%'+s+'%,track_number.ilike.%'+s+'%,comment.ilike.%'+s+'%,card_used.ilike.%'+s+'%');
+    }
+    q=q.order('created_at',{ascending:false});
+    const{data:orders}=await q;
+    let f=orders||[];
+    if(currentStatusFilter!=='all')f=f.filter(o=>o.status===currentStatusFilter);
+    const sts=['all',...new Set((orders||[]).map(o=>o.status))];
+    document.getElementById('status-filters').innerHTML=sts.map(s=>
+        '<div class="filter-chip '+(s===currentStatusFilter?'active':'')+'" onclick="filterStatus(\''+s+'\')">'+(s==='all'?'Все':s)+'</div>'
+    ).join('');
+    const c=document.getElementById('orders-list');
+    if(!f.length){c.innerHTML='<div class="empty-state"><span class="icon">🔍</span><p>Заказов не найдено</p></div>';return}
+    c.innerHTML=f.map(o=>
+        '<div class="order-card" onclick="editOrder('+o.id+')">'+
+        '<div class="order-header">'+
+        '<span class="order-product">'+esc(o.product_name||'Без названия')+'</span>'+
+        '<span class="order-price">'+(o.full_price_byn?o.full_price_byn+' BYN':'—')+'</span>'+
+        '</div>'+
+        '<div class="order-meta">'+
+        '<span>'+esc(o.client_username||'—')+'</span>'+
+        getDeliveryBadge(o.delivery_type)+
+        getStatusBadge(o.status)+
+        (o.track_number?'<span>📍 '+esc(o.track_number)+'</span>':'')+
+        '</div>'+
+        '<div class="order-profit">Прибыль: '+(o.profit_byn?o.profit_byn.toFixed(2):'0.00')+' BYN</div>'+
+        '</div>'
+    ).join('');
+}
+function filterStatus(s){currentStatusFilter=s;loadOrders()}
+function esc(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+document.getElementById('order-modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
+(async function(){await loadSettings();loadDashboard()})();
 </script>
 </body>
 </html>
