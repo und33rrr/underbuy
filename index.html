@@ -506,9 +506,20 @@
                 <label>Комментарий</label>
                 <textarea id="m-comment" rows="2" placeholder="Заметки..."></textarea>
             </div>
-            <input type="hidden" id="m-price-cny">
-            <input type="hidden" id="m-weight-kg">
-            <input type="hidden" id="m-margin-byn">
+            <div class="row row-2">
+                <div class="input-group">
+                    <label>Цена в ¥</label>
+                    <input type="number" id="m-price-cny" step="0.01" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>Вес (кг)</label>
+                    <input type="number" id="m-weight-kg" step="0.01" placeholder="0">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Наценка (BYN)</label>
+                <input type="number" id="m-margin-byn" step="0.01" placeholder="0">
+            </div>
             <div style="display:flex;gap:8px;margin-top:4px">
                 <button class="btn btn-green" onclick="saveOrder()" id="m-save-btn" style="flex:1">Сохранить</button>
                 <button class="btn btn-ghost" onclick="closeModal()" style="flex:0 0 auto;padding:12px 20px">Отмена</button>
